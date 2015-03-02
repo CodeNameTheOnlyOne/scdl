@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 """scdl allow you to download music from soundcloud
-
 Usage:
     scdl -l <track_url> [-a | -f | -t | -p][-c][-o <offset>]\
 [--hidewarnings][--debug | --error][--path <path>][--addtofile][--onlymp3]
@@ -8,8 +7,6 @@ Usage:
 [--hidewarnings][--debug | --error][--path <path>][--addtofile][--onlymp3]
     scdl -h | --help
     scdl --version
-
-
 Options:
     -h --help          Show this screen
     --version          Show version
@@ -33,6 +30,7 @@ from docopt import docopt
 from termcolor import colored
 import configparser
 from scdl import __version__
+from requests.exceptions import HTTPError
 
 import warnings
 import os
@@ -348,13 +346,17 @@ def download_track(track, playlist_name=None):
     global arguments
 
     if track.streamable:
-        stream_url = client.get(track.stream_url, allow_redirects=False)
+        try:
+            stream_url = client.get(track.stream_url, allow_redirects=False)
+        except HTTPError:
+            log('%s track not found...' % (track.title), strverbosity=0)
+            return
     else:
         log('%s is not streamable...' % (track.title), strverbosity=0)
         log('', strverbosity=1)
         return
     title = track.title
-    title = title.encode('utf-8', 'ignore').decode(sys.stdout.encoding)
+    title = title.encode('utf-8', 'ignore').decode('utf-8')
     log("Downloading " + title, strverbosity=1)
 
     #filename
@@ -386,7 +388,7 @@ def download_track(track, playlist_name=None):
             except:
                 log('Error trying to set the tags...', strverbosity=0)
         else:
-            log('This type of audio doesn\'t support tagging...', strverbosity=0)
+            log('This type of audio don\'t support tag...', strverbosity=0)
     else:
         if arguments["-c"]:
             log(title + " already Downloaded", strverbosity=1)
